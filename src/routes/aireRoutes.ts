@@ -53,6 +53,17 @@ class AireRoutes {
                         "mes": mes,
                         "dia": dia
                     }
+                },
+                {
+                    $project: {
+                        "date": 1,
+                        "NO2": {$trunc: ["$NO2", 2]},
+                        "pm10": {$trunc: ["$pm10", 2]},
+                        "pm25": {$trunc: ["$pm25", 2]},
+                        "latitude": 1,
+                        "longitude": 1,
+                        "timestamp": 1
+                    }
                 }
             ])
             res.json(query)
@@ -121,10 +132,38 @@ class AireRoutes {
         await db.desconectarBD()
     }
 
+    private getFecha3 = async (req:Request, res: Response) => {
+        const { time } = req.params
+        console.log( time )
+        await db.conectarBD()
+        .then( async ()=> {
+            const query = await Aires.aggregate([
+                {
+                    $match: {
+                        "timestamp": time
+                    }
+                },
+                {
+                    $project: {
+                        "dato": ["$NO2", "$pm10", "$pm25"],
+                        "latitude": 1,
+                        "longitude": 1
+                    }
+                }
+            ])
+            res.json(query)
+        })
+        .catch((mensaje) => {
+            res.send(mensaje)
+        })
+        await db.desconectarBD()
+    }
+
     misRutas(){
         this._router.get('/', this.getAires)
         this._router.get('/getFecha/:ano&:mes&:dia', this.getFecha)
         this._router.get('/getFecha2/:ano&:mes&:dia&:cont', this.getFecha2)
+        this._router.get('/getFecha3/:time', this.getFecha3)
     }
 }
 const obj = new AireRoutes()

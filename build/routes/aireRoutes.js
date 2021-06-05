@@ -55,6 +55,17 @@ class AireRoutes {
                             "mes": mes,
                             "dia": dia
                         }
+                    },
+                    {
+                        $project: {
+                            "date": 1,
+                            "NO2": { $trunc: ["$NO2", 2] },
+                            "pm10": { $trunc: ["$pm10", 2] },
+                            "pm25": { $trunc: ["$pm25", 2] },
+                            "latitude": 1,
+                            "longitude": 1,
+                            "timestamp": 1
+                        }
                     }
                 ]);
                 res.json(query);
@@ -121,6 +132,32 @@ class AireRoutes {
             });
             yield database_1.db.desconectarBD();
         });
+        this.getFecha3 = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const { time } = req.params;
+            console.log(time);
+            yield database_1.db.conectarBD()
+                .then(() => __awaiter(this, void 0, void 0, function* () {
+                const query = yield aire_1.Aires.aggregate([
+                    {
+                        $match: {
+                            "timestamp": time
+                        }
+                    },
+                    {
+                        $project: {
+                            "dato": ["$NO2", "$pm10", "$pm25"],
+                            "latitude": 1,
+                            "longitude": 1
+                        }
+                    }
+                ]);
+                res.json(query);
+            }))
+                .catch((mensaje) => {
+                res.send(mensaje);
+            });
+            yield database_1.db.desconectarBD();
+        });
         this._router = express_1.Router();
     }
     get router() {
@@ -130,6 +167,7 @@ class AireRoutes {
         this._router.get('/', this.getAires);
         this._router.get('/getFecha/:ano&:mes&:dia', this.getFecha);
         this._router.get('/getFecha2/:ano&:mes&:dia&:cont', this.getFecha2);
+        this._router.get('/getFecha3/:time', this.getFecha3);
     }
 }
 const obj = new AireRoutes();
